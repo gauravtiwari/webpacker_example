@@ -24,11 +24,22 @@ function formatPublicPath(host = '', path = '') {
 
 const output = {
   path: resolve('public', settings.public_output_path),
-  publicPath: formatPublicPath(env.ASSET_HOST, settings.public_output_path)
+  publicPath: `/${settings.public_output_path}/`.replace(/([^:]\/)\/+/g, '$1'),
+  publicPathWithHost: formatPublicPath(env.ASSET_HOST, settings.public_output_path)
+}
+
+let resolvedModules = [
+  resolve(settings.source_path),
+  'node_modules'
+]
+
+if (settings.resolved_paths && Array.isArray(settings.resolved_paths)) {
+  resolvedModules = resolvedModules.concat(settings.resolved_paths)
 }
 
 module.exports = {
   settings,
+  resolvedModules,
   env,
   loadersDir,
   output

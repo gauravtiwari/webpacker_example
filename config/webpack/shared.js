@@ -9,11 +9,12 @@ const { sync } = require('glob')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const ManifestPlugin = require('webpack-manifest-plugin')
 const extname = require('path-complete-extname')
-const { env, settings, output, loadersDir } = require('./configuration.js')
+const { env, settings, output, loadersDir, resolvedModules } = require('./configuration.js')
 
-const extensionGlob = `**/*{${settings.extensions.join(',')}}*`
+const extensionGlob = `**/*{${settings.extensions.join(',')}}`
 const entryPath = join(settings.source_path, settings.source_entry_path)
 const packPaths = sync(join(entryPath, extensionGlob))
+const isHMR = settings.dev_server && settings.dev_server.hmr
 
 module.exports = {
   entry: packPaths.reduce(
@@ -26,7 +27,8 @@ module.exports = {
   ),
 
   output: {
-    filename: '[name].js',
+    filename: isHMR ? '[name]-[hash].js' : '[name]-[chunkhash].js',
+    chunkFilename: '[name]-[chunkhash].chunk.js',
     path: output.path,
     publicPath: output.publicPath
   },
@@ -37,7 +39,7 @@ module.exports = {
 
   plugins: [
     new webpack.EnvironmentPlugin(JSON.parse(JSON.stringify(env))),
-    new ExtractTextPlugin(env.NODE_ENV === 'production' ? '[name]-[hash].css' : '[name].css'),
+    new ExtractTextPlugin('[name]-[contenthash].css'),
     new ManifestPlugin({
       publicPath: output.publicPath,
       writeToFileEmit: true
@@ -46,10 +48,7 @@ module.exports = {
 
   resolve: {
     extensions: settings.extensions,
-    modules: [
-      resolve(settings.source_path),
-      'node_modules'
-    ]
+    modules: resolvedModules
   },
 
   resolveLoader: {

@@ -1,5 +1,6 @@
 // Note: You must restart bin/webpack-dev-server for changes to take effect
 
+const webpack = require('webpack')
 const merge = require('webpack-merge')
 const sharedConfig = require('./shared.js')
 const { settings, output } = require('./configuration.js')
@@ -7,19 +8,16 @@ const { settings, output } = require('./configuration.js')
 module.exports = merge(sharedConfig, {
   devtool: 'cheap-eval-source-map',
 
-  stats: {
-    errorDetails: true
-  },
-
   output: {
     pathinfo: true
   },
 
   devServer: {
     clientLogLevel: 'none',
-    https: settings.dev_server.https,
     host: settings.dev_server.host,
     port: settings.dev_server.port,
+    https: settings.dev_server.https,
+    hot: settings.dev_server.hmr,
     contentBase: output.path,
     publicPath: output.publicPath,
     compress: true,
@@ -27,6 +25,14 @@ module.exports = merge(sharedConfig, {
     historyApiFallback: true,
     watchOptions: {
       ignored: /node_modules/
+    },
+    stats: {
+      errorDetails: true
     }
-  }
+  },
+
+  plugins: settings.dev_server.hmr ? [
+    new webpack.HotModuleReplacementPlugin(),
+    new webpack.NamedModulesPlugin()
+  ] : []
 })
